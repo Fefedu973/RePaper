@@ -1,0 +1,21 @@
+--- a/handler/qevdevtablethandler.cpp
++++ b/handler/qevdevtablethandler.cpp
+@@ -9,6 +9,7 @@
+ #include <QPointingDevice>
+ #include <QLoggingCategory>
+ #include <QtCore/private/qcore_unix_p.h>
++#include <qpa/qplatformscreen.h>
+ #include <qpa/qwindowsysteminterface.h>
+ #ifdef Q_OS_FREEBSD
+ #include <dev/evdev/input.h>
+@@ -103,7 +104,9 @@
+     qreal nx = (state.x - minValues.x) / qreal(maxValues.x - minValues.x);
+     qreal ny = (state.y - minValues.y) / qreal(maxValues.y - minValues.y);
+ 
+-    QRect winRect = QGuiApplication::primaryScreen()->geometry();
++    // QWindowSystemInterface expects native pixels and applies the scale factor.
++    // Using QScreen's logical geometry here would scale tablet input twice.
++    const QRect winRect = QGuiApplication::primaryScreen()->handle()->geometry();
+     QPointF globalPos(nx * winRect.width(), ny * winRect.height());
+     int pointer = state.tool;
+     // Prevent sending confusing values of 0 when moving the pen outside the active area.

@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 2,
+  "project": "reink-restencil-native-editor",
+  "version": "0.8.2",
+  "packageKind": "native-editor-selection-test",
+  "deviceInstallationPerformed": true,
+  "deviceValidation": "0.8.2-page-readiness-fix-Carnet-2-open-user-confirmed;other-editing-workflows-not-revalidated",
+  "target": {
+    "model": "ferrari",
+    "firmware": "3.28.0.169",
+    "qt": "6.10.3",
+    "xochitlSha256": "43a9d5d0acc5b998264c16586e11b848f3b83d2d63b5fd322b09c0977d94d3d4"
+  },
+  "capabilities": {
+    "pc.palette.gesturePlacementPropertiesUndo": true,
+    "pc.parametricModel": true,
+    "native.exactResourceQmdPatch": "offline-validated",
+    "native.toolbarAndPageAttachment": "device-confirmed-0.2.1",
+    "native.exclusiveToolbarTool": "exact-native-toolbar-protocol-tested-on-pc",
+    "native.inspectSelectionMetadata": "original-selection-read-only-probe-observed-on-device",
+    "native.batchInsertion": "native-line-factory;no-selection-seed;one-serialized-native-batch;exact-input-order-active-ids;128-item-limit",
+    "native.pageSessionActivationRequired": false,
+    "native.pageReadiness": "wait-for-page-load-and-coordinate-mapping;retry-after-readiness-change;Carnet-2-open-user-confirmed",
+    "native.penPreview": "QQuickPaintedItem;immediate-first-frame;latest-only-16ms-post-parse-cooldown;no-idle-repaint;native-ScreenDriver.snapMode;retained-until-tiles-and-window-frame;physical-qa-pending",
+    "native.penBatchInput": "C++-event-boundary;16ms-or-256-point-batches;exact-release-endpoint;physical-qa-pending",
+    "native.touchNavigation": "original-native-target;no-relay;finger-synthesized-presses-rejected;stylus-only-editor;physical-qa-pending",
+    "native.solidArrowWholeSelection": "new-solid-arrows-are-one-SceneLineItem;includes-start-end-both-heads;physical-qa-pending",
+    "native.selectionTransform": "stylus-tap-region;object-specific-handles;oriented-rectangle-ellipse-symbol-frame;free-rotation;exact-native-selection-record-repair;ordinary-native-ink-retains-affine-controls;physical-qa-pending",
+    "native.creationStrokeColor": "opaque-ARGB-palette-and-hex;physical-qa-pending",
+    "native.selectionStrokeColor": "native-Copy-clones;exact-source-lineage-matching;one-serialized-worker-callback;checked-history-macro;exact-job-and-selection-receipt;physical-qa-pending",
+    "native.insertObservation": "exact-worker-job;retained-input-object-active-id-receipt;unchanged-existing-lines;single-history-command;exact-empty-selection-before-preview-handover;not-disk-durability",
+    "native.identityPersistence": "local-explicit-0.6-and-new-0.7-object-bindings;native-RM-field7-relocation-roots;model-revisions;affine-color-duplicate-undo-reopen-tested-on-host;physical-qa-pending",
+    "native.wholeObjectSelection": "registered-fresh-multipart-objects;exact-live-membership-expansion;ambiguous-or-partial-objects-refused;old-unbound-objects-not-migrated;physical-qa-pending",
+    "native.wireSnap": "verified-stencil-ports;wire-endpoints-and-segment-interiors;continuous-dashed-wire-path;cached-scene-coordinates;physical-qa-pending",
+    "native.objectBindingSynchronization": false,
+    "native.parametricHandles": "exact-complete-object;endpoints;wire-bend;oriented-box-dimensions;constant-width-regeneration;checked-native-history-macro;physical-qa-pending",
+    "native.attachedConnectors": false,
+    "native.atomicUndoValidated": false,
+    "native.legacyModelRecovery": "only-explicit-0.6-bindings;complete-native-geometry-equivalence-required;no-ownership-inference",
+    "native.historyPreflight": "exact-native-macro-tail-traversal;bounded-cycle-checked;known-nonmerging-terminal;shared-insert-replace-recolor-gate;host-regression-tested;physical-qa-pending",
+    "native.aspectRatioHold": "1000ms-stationary-pen-start;8-view-pixel-radius;all-queued-points-before-lock;rectangle-square;ellipse-circle;catalogue-symbol-ratio;current-oriented-resize-ratio;per-gesture-reset;physical-qa-pending",
+    "native.directSelectionButton": "exclusive-primary-PenTool;custom-select;no-foldout;exact-firmware-QMD-and-toolbar-protocol-tested",
+    "native.propertiesSessionCancel": "exact-page-history-checkpoint;retained-command-identities-and-macro-tree;attributed-command-suffix;128-edit-limit;single-Page-locked-cancel-worker;canonical-lineage-content-restoration;close-on-confirmed-receipt;physical-qa-pending"
+  },
+  "dependencies": [
+    "xovi",
+    "qt-resource-rebuilder"
+  ],
+  "mutationGate": "Exact profile; current page/layer; exclusive native PenTool; native Line factory; identity pendingEdit; bounded strokes/points; one command in flight across tool changes; serialized actual-active-line receipts and exact selection repair. Parametric replacement additionally requires one complete revalidated model, exact baseline IDs/versions, unchanged other ink and a checked native history macro. Dynamic attached-wire following remains disabled.",
+  "references": {
+    "xovi": "2b99649f5e4fd6288be7792a8570bd16418adb70",
+    "sceneAssistant": "8afbac01ca7816f9aa22a5897a3f2133b0b0d9d7",
+    "nativeQmd": "67025316fa58f0b9e34b33e374521d29517d7f51",
+    "resourceRebuilder": "7874154dba6793cc68a15fae0fb9dd272c4ed20a"
+  }
+}

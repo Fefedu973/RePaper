@@ -1,0 +1,236 @@
+; RePaper hooks for the exact ferrari 3.28.0.169 resource tree.
+
+; Prevent native history actions from racing a dispatched custom page command.
+AFFECT [[11806562588218124596]]
+    TRAVERSE [[8397993708429497603]]#[[6504254477]]
+        LOCATE AFTER ALL
+        INSERT {
+            readonly property bool repaperNativeOperationPending: !!repaperNativePageHost.item && repaperNativePageHost.item.nativeOperationPending
+            readonly property bool repaperNativePreviewActive: !!repaperNativePageHost.item && repaperNativePageHost.item.nativePreviewActive
+        }
+        ; ShapesOverlay's native snap preview requests the document-wide mode
+        ; through ScreenDriver. Keep its timers and native conditions in control.
+        TRAVERSE [[14916173537079816885]]#[[16533520945519075029]]
+            ASSERT [[7713572750845568]]
+            REBUILD [[7713572750845568]]
+                LOCATE BEFORE ALL
+                INSERT STREAM / ~&6504254477&~.repaperNativePreviewActive || /
+            END REBUILD
+        END TRAVERSE
+        REBUILD [[14521327022500200672]]
+            LOCATE BEFORE ALL
+            INSERT STREAM / !~&6504254477&~.repaperNativeOperationPending && /
+        END REBUILD
+        REBUILD [[9062779519017704436]]
+            LOCATE BEFORE ALL
+            INSERT STREAM / !~&6504254477&~.repaperNativeOperationPending && /
+        END REBUILD
+        TRAVERSE [[6502786168]] > [[6502786168]]#[[254550477519892873]] > [[14390120456204077937]]#[[11077763042784530127]]
+            REBUILD [[3309683146529646353]]
+                LOCATE AFTER STREAM / { /
+                INSERT { if (~&6504254477&~.repaperNativeOperationPending) return; }
+            END REBUILD
+            REBUILD [[18164105841893012165]]
+                LOCATE AFTER STREAM / { /
+                INSERT { if (~&6504254477&~.repaperNativeOperationPending) return; }
+            END REBUILD
+        END TRAVERSE
+    END TRAVERSE
+END AFFECT
+AFFECT [[1224665461898798997]]
+    TRAVERSE [[8397993708429497603]]#[[6504254477]]
+        LOCATE AFTER ALL
+        INSERT {
+            readonly property bool repaperNativeOperationPending: !!~&233745975898428&~.repaperEditorHost && ~&233745975898428&~.repaperEditorHost.nativeOperationPending
+        }
+        TRAVERSE [[3557976313601947634]]
+            REBUILD [[2332231560809390478]]
+                LOCATE BEFORE ALL
+                INSERT STREAM / !~&6504254477&~.repaperNativeOperationPending && /
+            END REBUILD
+            REBUILD [[15320428131036445858]]
+                LOCATE BEFORE ALL
+                INSERT STREAM / !~&6504254477&~.repaperNativeOperationPending && /
+            END REBUILD
+        END TRAVERSE
+        TRAVERSE [[6502786168]]#[[15549782143769420265]] > [[233704648923420]]#[[233745975898428]]
+            REBUILD [[504570165697419946]]
+                LOCATE BEFORE ALL
+                INSERT STREAM / !~&6504254477&~.repaperNativeOperationPending && /
+            END REBUILD
+            REBUILD [[499557725382009022]]
+                LOCATE BEFORE ALL
+                INSERT STREAM / !~&6504254477&~.repaperNativeOperationPending && /
+            END REBUILD
+            REBUILD [[629665970722475813]]
+                LOCATE AFTER STREAM / { /
+                INSERT { if (~&6504254477&~.repaperNativeOperationPending) return; }
+            END REBUILD
+            REBUILD [[464255440313915321]]
+                LOCATE AFTER STREAM / { /
+                INSERT { if (~&6504254477&~.repaperNativeOperationPending) return; }
+            END REBUILD
+        END TRAVERSE
+        TRAVERSE [[6502786168]]#[[15549782143769420265]] > [[9764739986001390370]]#[[10054167583259537218]]
+            LOCATE AFTER ALL
+            INSERT {
+                ~&233748385765473&~.~&233723471048145&~: !~&6504254477&~.repaperNativeOperationPending && !!~&11179472971324505115&~?.~&14521327022500200672&~
+                ~&233748385765473&~.~&233723470930533&~: !~&6504254477&~.repaperNativeOperationPending && !!~&11179472971324505115&~?.~&9062779519017704436&~
+            }
+        END TRAVERSE
+    END TRAVERSE
+END AFFECT
+
+; Original integration; selector provenance: ingatellent QMD 6702531 (GPL-2.0).
+AFFECT [[11806562588218124596]]
+    TRAVERSE [[8397993708429497603]]#[[6504254477]]
+        LOCATE AFTER ALL
+        INSERT {
+            Loader {
+                id: repaperNativePageHost
+                objectName: "RePaperNativePageHost"
+                anchors.fill: parent
+                z: 90
+                Component.onCompleted: { setSource("qrc:/repaper/editor/NativePageHost.qml", {deviceScene: ~&6504254477&~}) }
+            }
+        }
+        TRAVERSE [[428051690305612204]]
+            ASSERT [[18071720951862295464]]
+            REBUILD [[18071720951862295464]]
+                LOCATE AFTER { ~&7713694314935945&~.~&7621712625296025105&~(); }
+                INSERT {
+                    if (repaperNativePageHost.item && repaperNativePageHost.item.handleNativeSelection(~&214632789606&~, ~&254547437090053157&~)) return;
+                }
+            END REBUILD
+        END TRAVERSE
+    END TRAVERSE
+END AFFECT
+AFFECT [[11313888899523275277]]
+    TRAVERSE [[8397993708429497603]]#[[6504254477]]
+        LOCATE AFTER ALL
+        INSERT {
+            property var repaperEditorHost: null
+            readonly property bool repaperToolActive: !!~&6504254477&~.~&501100168435426133&~ && (~&6504254477&~.~&501100168435426133&~ === repaperInkTool || ~&6504254477&~.~&501100168435426133&~ === repaperStencilTool || ~&6504254477&~.~&501100168435426133&~ === repaperSelectTool)
+            property string repaperLastWritingPenType: "primary"
+            readonly property var repaperWritingPen: repaperLastWritingPenType === "secondary" ? ~&6504254477&~.secondaryPen : ~&6504254477&~.primaryPen
+            function repaperRememberWritingPen() {
+                const selected = ~&6504254477&~.selectedPen
+                if (!selected) return
+                if (selected.objectName === "primaryPenMenu") repaperLastWritingPenType = "primary"
+                else if (selected.objectName === "secondaryPenMenu") repaperLastWritingPenType = "secondary"
+            }
+            function repaperResumePen() {
+                if (repaperEditorHost && repaperEditorHost.nativeOperationPending) return false
+                ~&6504254477&~.selectPen(repaperLastWritingPenType)
+                const selected = ~&6504254477&~.selectedPen
+                if (!selected || (selected.objectName !== "primaryPenMenu" && selected.objectName !== "secondaryPenMenu")) {
+                    ~&6504254477&~.selectPen("primary")
+                }
+                ~&6504254477&~.closeFoldout()
+                repaperRememberWritingPen()
+                const current = ~&6504254477&~.selectedPen
+                return !!current && (current.objectName === "primaryPenMenu" || current.objectName === "secondaryPenMenu")
+            }
+            function repaperSetWritingColor(rgb, paletteEnum) {
+                if (repaperEditorHost && repaperEditorHost.nativeOperationPending) return false
+                if (repaperToolActive) {
+                    // Same native PenProperties setters as DocumentView's
+                    // penColorSelected handler, preserving the custom tool.
+                    repaperWritingPen.color = paletteEnum
+                    repaperWritingPen.colorCode = rgb
+                } else {
+                    const selected = ~&6504254477&~.selectedPen
+                    if (!selected || (selected.objectName !== "primaryPenMenu" && selected.objectName !== "secondaryPenMenu")) {
+                        if (!repaperResumePen()) return false
+                    }
+                    ~&6504254477&~.penColorSelected(rgb, paletteEnum)
+                }
+                return repaperWritingPen.color === paletteEnum && (paletteEnum !== 9 || Number(repaperWritingPen.colorCode) === Number(rgb))
+            }
+            Connections {
+                target: ~&6504254477&~
+                function onSelectedPenChanged() { ~&6504254477&~.repaperRememberWritingPen() }
+                Component.onCompleted: ~&6504254477&~.repaperRememberWritingPen()
+            }
+        }
+        TRAVERSE [[6502786168]]#[[233745975898428]] > [[8398044571386570029]]
+            LOCATE AFTER [[7712155293725601]]#[[15827066597889961342]]
+            INSERT {
+                ~&233699089663818&~ {
+                    id: repaperInkTool
+                    objectName: "RePaperInkTool"
+                    toolbar: ~&6504254477&~
+                    pen: ~&6504254477&~.~&8399947454712231440&~
+                    penToolType: "primary"
+                    implicitlySelected: ~&6504254477&~.~&501100168435426133&~ === repaperInkTool
+                    type: ~&454089850271038938&~.Type.ToolbarButton
+                    visible: ~&6504254477&~.expanded
+                    iconSource: "qrc:/ark/icons/fineliner_tip"
+                    label: "reInk"
+                    onPressed: { ~&6504254477&~.~&1318897126668497941&~(repaperInkTool, ~&233704648923420&~.~&8398583355955217966&~.Activate); if (~&6504254477&~.repaperEditorHost) ~&6504254477&~.repaperEditorHost.editor.refreshNativeState() }
+                    foldoutContent: Loader {
+                        id: repaperInkFoldoutLoader
+                        width: Math.min(720, ~&6504254477&~.container.width - 48); height: Math.min(1000, ~&6504254477&~.container.height - 48)
+                        property var editorHost: ~&6504254477&~.repaperEditorHost
+                        function reloadEditor() {
+                            if (!editorHost) { if (source.toString().length) setSource(""); return }
+                            if (item) { item.editor = editorHost.editor; return }
+                            if (visible && !source.toString().length)
+                                setSource("qrc:/repaper/editor/ReInkSidebar.qml", {editor: editorHost.editor, mode: "reink"})
+                        }
+                        onEditorHostChanged: { reloadEditor() }
+                        onVisibleChanged: { reloadEditor() }
+                        Component.onCompleted: { reloadEditor() }
+                        Connections { target: repaperInkFoldoutLoader.item; function onToolChosen() { ~&6504254477&~.closeFoldout() } }
+                    }
+                }
+                ~&233699089663818&~ {
+                    id: repaperSelectTool
+                    objectName: "RePaperSelectTool"
+                    toolbar: ~&6504254477&~
+                    pen: ~&6504254477&~.~&8399947454712231440&~
+                    penToolType: "primary"
+                    implicitlySelected: ~&6504254477&~.~&501100168435426133&~ === repaperSelectTool
+                    type: ~&454089850271038938&~.Type.ToolbarButton
+                    visible: ~&6504254477&~.expanded
+                    enabled: !!~&6504254477&~.repaperEditorHost && ~&6504254477&~.repaperEditorHost.editor.available
+                    iconSource: "qrc:/ark/icons/selection_tool"
+                    label: "reSelect"
+                    onPressed: {
+                        ~&6504254477&~.~&1318897126668497941&~(repaperSelectTool, ~&233704648923420&~.~&8398583355955217966&~.Activate)
+                        if (~&6504254477&~.repaperEditorHost) ~&6504254477&~.repaperEditorHost.activateCustomSelection()
+                        ~&6504254477&~.closeFoldout()
+                    }
+                }
+                ~&233699089663818&~ {
+                    id: repaperStencilTool
+                    objectName: "RePaperStencilTool"
+                    toolbar: ~&6504254477&~
+                    pen: ~&6504254477&~.~&8399947454712231440&~
+                    penToolType: "primary"
+                    implicitlySelected: ~&6504254477&~.~&501100168435426133&~ === repaperStencilTool
+                    type: ~&454089850271038938&~.Type.ToolbarButton
+                    visible: ~&6504254477&~.expanded
+                    iconSource: "qrc:/ark/icons/contrast_off"
+                    label: "reStencil"
+                    onPressed: { ~&6504254477&~.~&1318897126668497941&~(repaperStencilTool, ~&233704648923420&~.~&8398583355955217966&~.Activate); if (~&6504254477&~.repaperEditorHost) ~&6504254477&~.repaperEditorHost.editor.refreshNativeState() }
+                    foldoutContent: Loader {
+                        id: repaperStencilFoldoutLoader
+                        width: Math.min(720, ~&6504254477&~.container.width - 48); height: Math.min(1000, ~&6504254477&~.container.height - 48)
+                        property var editorHost: ~&6504254477&~.repaperEditorHost
+                        function reloadEditor() {
+                            if (!editorHost) { if (source.toString().length) setSource(""); return }
+                            if (item) { item.editor = editorHost.editor; return }
+                            if (visible && !source.toString().length)
+                                setSource("qrc:/repaper/editor/ReInkSidebar.qml", {editor: editorHost.editor, mode: "restencil"})
+                        }
+                        onEditorHostChanged: { reloadEditor() }
+                        onVisibleChanged: { reloadEditor() }
+                        Component.onCompleted: { reloadEditor() }
+                        Connections { target: repaperStencilFoldoutLoader.item; function onToolChosen() { ~&6504254477&~.closeFoldout() } }
+                    }
+                }
+            }
+        END TRAVERSE
+    END TRAVERSE
+END AFFECT

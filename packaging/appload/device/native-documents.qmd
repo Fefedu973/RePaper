@@ -1,0 +1,34 @@
+; RePaper's native notebook adapter. This component calls the public QML
+; interfaces supplied by the running UI; it never fabricates document files.
+AFFECT [[2328484894988065446]]
+    IMPORT net.asivery.AppLoad 1.0
+    IMPORT [[6504469795.6504031891.15778643682317564345]] 1.0
+    TRAVERSE [[8397788359424131273]]
+        LOCATE AFTER ALL
+        INSERT {
+            RePaperNativeDocuments {
+                ~&8399878573055752961&~: "repaper-native-documents"
+                ~&233735394140446&~: ~&233694067165438&~
+                libraryController: ~&2918312801265623842&~
+                documentImporter: DocumentImporter
+                agendaPage: NativeAgendaText {}
+                agendaHeader: NativeAgendaHeader {}
+                ~&532988139209996140&~: ~&243560541951849292&~
+                deviceScreenInfo: ~&4577806659545151269&~
+                ~&2766288418351025740&~: ~&6504254477&~.~&2766288418351025740&~
+                ~&7712989590835962&~: ~&6504254477&~.~&7712989590835962&~
+                documentViewLoader: ~&15793094956877902211&~
+                onDismissAppRequested: (~&197090674&~) => {
+                    ~&254540341572282132&~.appLoadView.~&233748328658231&~ = ~&214625660372&~;
+                    ~&197085552&~ (~&214622607920&~ ~&214622350669&~ ~&5972574&~ windowParent.~&7712883416119442&~) {
+                        ~&5972376&~ (~&214622350669&~.qtfbKey === ~&197090674&~) {
+                            ~&214622350669&~.stopUnderlying();
+                            ~&214622350669&~.~&7082542539139&~();
+                            ~&214621519406&~;
+                        }
+                    }
+                }
+            }
+        }
+    END TRAVERSE
+END AFFECT

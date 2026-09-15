@@ -1,0 +1,106 @@
+--- a/appload.pro
++++ b/appload.pro
+@@ -1,4 +1,4 @@
+-QT     += core gui qml quickcontrols2
++QT     += core gui qml quickcontrols2 network
+ 
+ TARGET = appload
+ TEMPLATE = app
+@@ -12,3 +12,7 @@
+             src/keyboard/layout.h src/Launcher.h src/EmuOnly.h
+ 
+ RESOURCES += resources/resources.qrc
++
++INCLUDEPATH += src
++SOURCES += src/native-keyboard-host/NativeKeyboardHost.cpp
++HEADERS += src/native-keyboard-host/NativeKeyboardHost.h
+--- a/xovi/template/appload.pro
++++ b/xovi/template/appload.pro
+@@ -1,4 +1,4 @@
+-QT     += core gui qml quickcontrols2
++QT     += core gui qml quickcontrols2 network
+ 
+ TARGET = appload
+ TEMPLATE = lib
+@@ -8,3 +8,7 @@
+ HEADERS += src/AppLoad.h src/AppLoadCoordinator.h src/library.h src/AppLibrary.h \
+             src/qtfb/FBController.h src/qtfb/fbmanagement.h src/keyboard/layout.h src/Launcher.h
+ 
++
++INCLUDEPATH += src
++SOURCES += src/native-keyboard-host/NativeKeyboardHost.cpp
++HEADERS += src/native-keyboard-host/NativeKeyboardHost.h
+--- a/src/main.cpp
++++ b/src/main.cpp
+@@ -11,6 +11,7 @@
+ #include "log.h"
+ 
+ #include "qtfb/FBController.h"
++#include "native-keyboard-host/NativeKeyboardHost.h"
+ #include "qtfb/fbmanagement.h"
+ 
+ #include <dlfcn.h>
+@@ -63,6 +64,7 @@
+     qmlRegisterType<AppLoadLibrary>("net.asivery.AppLoad", 1, 0, "AppLoadLibrary");
+     qmlRegisterType<AppLoadApplication>("net.asivery.AppLoad", 1, 0, "AppLoadApplication");
+     qmlRegisterType<FBController>("net.asivery.Framebuffer", 1, 0, "FBController");
++    qmlRegisterType<NativeKeyboardHost>("net.asivery.Framebuffer", 1, 0, "NativeKeyboardHost");
+     qmlRegisterSingletonType<AppLoadLauncher>("net.asivery.AppLoad", 1, 0, "AppLoadLauncher", &AppLoadLauncher::qmlSingleton);
+     qmlRegisterSingletonType<AppLoadEmuOnly>("net.asivery.AppLoad", 1, 0, "AppLoadEmuOnly", &AppLoadEmuOnly::qmlSingleton);
+     engine.load(QUrl(QStringLiteral("./_start.qml")));
+--- a/xovi/template/src/main.cpp
++++ b/xovi/template/src/main.cpp
+@@ -2,6 +2,7 @@
+ #include <QQmlApplicationEngine>
+ 
+ #include "qtfb/FBController.h"
++#include "native-keyboard-host/NativeKeyboardHost.h"
+ #include "qtfb/fbmanagement.h"
+ 
+ #include "AppLoadCoordinator.h"
+@@ -26,6 +27,7 @@
+         qmlRegisterType<AppLoadLibrary>("net.asivery.AppLoad", 1, 0, "AppLoadLibrary");
+         qmlRegisterType<AppLoadApplication>("net.asivery.AppLoad", 1, 0, "AppLoadApplication");
+         qmlRegisterType<FBController>("net.asivery.Framebuffer", 1, 0, "FBController");
++        qmlRegisterType<NativeKeyboardHost>("net.asivery.Framebuffer", 1, 0, "NativeKeyboardHost");
+         qmlRegisterSingletonType<AppLoadLauncher>("net.asivery.AppLoad", 1, 0, "AppLoadLauncher", &AppLoadLauncher::qmlSingleton);
+         qt_resource_rebuilder$qmldiff_add_external_diff(r$apploadDiff, "AppLoad hooks in main UI");
+ 
+--- a/resources/qml/window.qml
++++ b/resources/qml/window.qml
+@@ -25,6 +25,7 @@
+     property alias appName: _appName.text
+     property bool supportsScaling: false
+     property var qtfbKey: -1
++    readonly property string nativeKeyboardSocket: nativeKeyboardHost.socketPath
+     property int appPid: -1
+     property bool minimized: false
+     property bool fullscreen: false
+@@ -351,6 +352,13 @@
+ 
+         FBController {
+             id: windowCanvas
++
++            NativeKeyboardHost {
++                id: nativeKeyboardHost
++                anchors.fill: parent
++                framebufferID: root.qtfbKey
++                framebufferItem: windowCanvas
++            }
+             anchors.fill: parent
+ 
+             visible: qtfbKey != -1
+--- a/resources/qml/appload.qml
++++ b/resources/qml/appload.qml
+@@ -75,7 +75,10 @@
+         if(modelData.externalType == 0 /* INTERNAL */) {
+             win.loadApplication(modelData.id);
+         } else if(modelData.externalType == 1 /* EXTERNAL_NOGUI */ || modelData.externalType == 2 /* EXTERNAL_QTFB */) {
+-            win.appPid = library.launchExternal(modelData.id, qtfbKey, extraArgs || [], extraEnv || {});
++            const environment = Object.assign({}, extraEnv || {});
++            if (qtfbKey !== -1 && win.nativeKeyboardSocket.length > 0)
++                environment.REPAPER_NATIVE_KEYBOARD_SOCKET = win.nativeKeyboardSocket;
++            win.appPid = library.launchExternal(modelData.id, qtfbKey, extraArgs || [], environment);
+         }
+ 
+         return win;

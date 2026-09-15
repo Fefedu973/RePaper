@@ -1,0 +1,11 @@
+#!/bin/sh
+# systemd starts this in a service cgroup independent of Xochitl and the apps.
+set -eu
+runtime=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+unset LD_PRELOAD QTFB_KEY REPAPER_BRIDGE_STARTER PAPER_BRIDGE_SOCKET
+export LD_LIBRARY_PATH="$runtime/lib"
+export QT_PLUGIN_PATH="$runtime/plugins"
+export QT_QPA_FONTDIR="$runtime/fonts"
+export FONTCONFIG_FILE="$runtime/fonts/fonts.conf"
+export SSL_CERT_FILE="$runtime/certs/ca-certificates.crt"
+exec "$runtime/paper-bridge" --device-service --idle-timeout 900

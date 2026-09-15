@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="430" viewBox="0 0 1440 430" role="img" aria-labelledby="title desc">
+  <title id="title">RePaper</title>
+  <desc id="desc">Écrire, dessiner, calculer, organiser. Illustration de traits, d'un circuit et d'une formule sur une feuille.</desc>
+  <rect width="1440" height="430" rx="20" fill="#f3f1ea"/>
+  <path d="M60 70H690M60 361H690" stroke="#c9c6bd"/>
+  <text x="64" y="115" fill="#3e5b4e" font-family="Arial,sans-serif" font-size="16" letter-spacing="4">OUTILS POUR REMARKABLE PAPER PRO</text>
+  <text x="57" y="244" fill="#1d2220" font-family="Georgia,serif" font-size="112" letter-spacing="-5">RePaper</text>
+  <text x="64" y="301" fill="#4d534e" font-family="Arial,sans-serif" font-size="24">Écrire. Dessiner. Calculer. Organiser.</text>
+  <rect x="831" y="40" width="537" height="355" rx="10" fill="#dedbd2"/>
+  <rect x="819" y="28" width="537" height="355" rx="10" fill="#fffefa" stroke="#c5c4ba"/>
+  <g stroke="#ebe9e2" stroke-width="1"><path d="M849 97H1326M849 147H1326M849 197H1326M849 247H1326M849 297H1326M849 347H1326"/></g>
+  <g fill="none" stroke="#2b4137" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M870 122H932V106H1007V138H932V122M1007 122H1094V207H1042M998 207H902V170"/>
+    <circle cx="902" cy="157" r="13"/><path d="M895 157H909M902 150V164M1011 184V231M1028 184V231M998 207H1011M1028 207H1042"/>
+    <path d="M1154 222V97M1138 206H1295" stroke="#969a92" stroke-width="2"/>
+    <path d="M1154 178C1169 103 1184 103 1199 178S1229 253 1244 178 1274 103 1289 178" stroke="#9c4d43"/>
+    <path d="M863 314L883 334L917 289" stroke="#3d6f56"/>
+  </g>
+  <text x="952" y="316" font-family="Georgia,serif" font-style="italic" font-size="36" fill="#343b35">½ + √2</text>
+  <path d="M1174 305H1291" stroke="#3d6f56" stroke-width="3" stroke-linecap="round"/>
+  <path d="M1174 323H1250" stroke="#adada2" stroke-width="2" stroke-linecap="round"/>
+</svg>

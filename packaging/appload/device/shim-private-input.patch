@@ -1,0 +1,25 @@
+diff --git a/shim/src/fb-shim.cpp b/shim/src/fb-shim.cpp
+--- a/shim/src/fb-shim.cpp
++++ b/shim/src/fb-shim.cpp
+@@ -42,7 +42,8 @@ bool respectAppRefreshMode;
+ bool respectFullRefreshRequests;
+ 
+ int fbShimOpen(const char *file) {
+-    return strcmp(file, FILE_FB) == 0 ? shmFD : INTERNAL_SHIM_NOT_APPLICABLE; 
++    const char *configured = getenv("QTFB_SHIM_FB_PATH");
++    return strcmp(file, configured && *configured ? configured : FILE_FB) == 0 ? shmFD : INTERNAL_SHIM_NOT_APPLICABLE;
+ }
+ 
+ int fbShimClose(int fd) {
+diff --git a/shim/src/input-shim.cpp b/shim/src/input-shim.cpp
+--- a/shim/src/input-shim.cpp
++++ b/shim/src/input-shim.cpp
+@@ -229,7 +229,7 @@
+                     break;
+             }
+ 
+-            CERR << "[QTFB SHIM INPUT]: " << (int) message.userInput.inputType << ", " << message.userInput.x << ", " << message.userInput.y << " (Translated to " << xTranslate << ", " << yTranslate << ")" << std::endl;
++            // Input payloads may contain credentials; never log them.
+             switch(message.userInput.inputType) {
+                 case INPUT_TOUCH_PRESS:
+                     state_a = 1;

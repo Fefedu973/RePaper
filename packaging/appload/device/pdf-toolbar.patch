@@ -1,0 +1,10 @@
+--- a/resources/resources.qrc
++++ b/resources/resources.qrc
+@@ -5,6 +5,7 @@
+ 		<file alias="icons/exit">icons/exit.svg</file>
+ 		<file alias="icons/check">icons/check.svg</file>
+ 		<file alias="icons/calculator">icons/calculator.svg</file>
++		<file alias="icons/pdf-reader">icons/pdf-reader.svg</file>
+ 		<file alias="icons/keyboard">icons/keyboard.svg</file>
+ 
+ 		<file>qml/appload.qml</file>

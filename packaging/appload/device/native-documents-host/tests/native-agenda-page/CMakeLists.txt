@@ -1,0 +1,21 @@
+cmake_minimum_required(VERSION 3.21)
+project(NativeAgendaPageTests LANGUAGES CXX)
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_AUTOMOC ON)
+find_package(Qt6 6.2 REQUIRED COMPONENTS Core Gui Test)
+get_filename_component(REPOSITORY "${CMAKE_CURRENT_LIST_DIR}/../../../../../.." ABSOLUTE)
+set(COMMON "${REPOSITORY}/extensions/editor-common")
+set(HOST "${CMAKE_CURRENT_LIST_DIR}/../..")
+add_executable(native-agenda-page-tests NativeAgendaPageTest.cpp
+  ${HOST}/NativeAgendaPage.cpp ${HOST}/NativeAgendaLayout.cpp
+  ${COMMON}/NativeObjectAccess.cpp ${COMMON}/NativeSelectionColor.cpp
+  ${COMMON}/NativeLineFactory.cpp ${COMMON}/TargetProfile.cpp ${COMMON}/NativeStrokeSampling.cpp)
+target_include_directories(native-agenda-page-tests PRIVATE ${HOST} ${COMMON} ${REPOSITORY}/apps/restencil/src)
+target_link_libraries(native-agenda-page-tests PRIVATE Qt6::Core Qt6::Gui Qt6::Test)
+target_compile_options(native-agenda-page-tests PRIVATE -Wall -Wextra -Wpedantic)
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64|arm64")
+  target_compile_definitions(native-agenda-page-tests PRIVATE REPAPER_WITH_NATIVE_ABI=1)
+  target_include_directories(native-agenda-page-tests PRIVATE ${REPOSITORY}/.tools/xovi-scene-assistant)
+  target_sources(native-agenda-page-tests PRIVATE ${REPOSITORY}/.tools/xovi-scene-assistant/rm_Line.cpp)
+endif()
+target_link_options(native-agenda-page-tests PRIVATE "-Wl,--no-undefined")

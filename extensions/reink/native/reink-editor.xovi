@@ -1,0 +1,8 @@
+version 0.8.1
+depends-on qt-resource-rebuilder:0.3.0
+import? qt-resource-rebuilder$qmldiff_add_external_diff
+import? qt-resource-rebuilder$qmldiff_disable_slots_while_processing
+import? qt-resource-rebuilder$qmldiff_enable_slots_while_processing
+resource editorHooks:editor.qmd
+resource editorPanels:editor_panels.rcc
+resource nativePage:native_resources.rcc

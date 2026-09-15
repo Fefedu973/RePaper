@@ -1,0 +1,6 @@
+upstream/** -text
+upstream-sqlite/** -text
+upstream-evdevtablet/** -text
+LICENSES/** -text
+*.sh text eol=lf
+*.sha256 text eol=lf

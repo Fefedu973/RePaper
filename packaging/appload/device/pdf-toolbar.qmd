@@ -1,0 +1,25 @@
+; Launch the read-only PDF companion without changing the active document.
+AFFECT [[11313888899523275277]]
+    IMPORT net.asivery.AppLoad 1.0
+    TRAVERSE [[8397993708429497603]]#[[6504254477]]
+        TRAVERSE [[6502786168]]#[[233745975898428]] > [[8398044571386570029]]
+            LOCATE AFTER [[7712155293725601]]#[[15827066597889961342]]
+            INSERT {
+                ToolbarTool {
+                    id: repaperPdfTool
+                    objectName: "RePaperPdfTool"
+                    toolbar: ~&6504254477&~
+                    type: ToolbarTool.Type.ToolbarButton
+                    visible: ~&6504254477&~.expanded
+                    enabled: !~&6504254477&~.dragging && !(typeof ~&6504254477&~.repaperEditorHost !== "undefined" && ~&6504254477&~.repaperEditorHost && ~&6504254477&~.repaperEditorHost.nativeOperationPending)
+                    iconSource: "qrc:/appload/icons/pdf-reader"
+                    label: "PDF en fenêtre"
+                    onClicked: {
+                        ~&6504254477&~.closeFoldout()
+                        AppLoadLauncher.launchApplication("external::repdf", [], {}, true)
+                    }
+                }
+            }
+        END TRAVERSE
+    END TRAVERSE
+END AFFECT

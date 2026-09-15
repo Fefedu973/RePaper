@@ -1,0 +1,40 @@
+cmake_minimum_required(VERSION 3.21)
+if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+    project(rmchat_rich LANGUAGES CXX)
+    set(CMAKE_CXX_STANDARD 17)
+    set(CMAKE_CXX_STANDARD_REQUIRED ON)
+    set(CMAKE_AUTOMOC ON)
+    include(CTest)
+endif()
+find_package(Qt6 6.2 REQUIRED COMPONENTS Core Gui Qml Quick)
+set(microtex_root "${CMAKE_CURRENT_SOURCE_DIR}/vendor/microtex")
+file(GLOB_RECURSE microtex_sources CONFIGURE_DEPENDS
+    "${microtex_root}/src/atom/*.cpp" "${microtex_root}/src/box/*.cpp"
+    "${microtex_root}/src/core/*.cpp" "${microtex_root}/src/fonts/*.cpp"
+    "${microtex_root}/src/res/*.cpp" "${microtex_root}/src/utils/*.cpp")
+add_library(rmchat_microtex STATIC ${microtex_sources}
+    "${microtex_root}/src/latex.cpp" "${microtex_root}/src/render.cpp"
+    "${microtex_root}/src/platform/qt/graphic_qt.cpp" vendor/tinyxml2/tinyxml2.cpp)
+target_compile_features(rmchat_microtex PUBLIC cxx_std_17)
+target_compile_definitions(rmchat_microtex PUBLIC BUILD_QT PRIVATE NDEBUG)
+target_include_directories(rmchat_microtex PUBLIC "${microtex_root}/src"
+    PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_CURRENT_SOURCE_DIR}/vendor/tinyxml2")
+target_link_libraries(rmchat_microtex PUBLIC Qt6::Gui)
+set_target_properties(rmchat_microtex PROPERTIES AUTOMOC OFF)
+if(MSVC)
+    target_compile_options(rmchat_microtex PRIVATE /utf-8)
+endif()
+add_library(rmchat_rich STATIC MathEngine.cpp MathEngine.h MarkdownScanner.cpp MarkdownScanner.h
+    RichDocument.cpp RichDocument.h RichMessage.cpp RichMessage.h)
+target_include_directories(rmchat_rich PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
+target_link_libraries(rmchat_rich PUBLIC Qt6::Core Qt6::Gui Qt6::Qml Qt6::Quick PRIVATE rmchat_microtex)
+file(GLOB_RECURSE math_fonts CONFIGURE_DEPENDS "${microtex_root}/res/fonts/*.ttf" "${microtex_root}/res/fonts/licences/*.txt")
+qt_add_resources(rmchat_rich "rmchat_math_fonts" PREFIX "/rmchat/math" BASE "${microtex_root}/res" FILES ${math_fonts})
+if(BUILD_TESTING)
+    find_package(Qt6 6.2 REQUIRED COMPONENTS Test)
+    add_executable(rmchat-rich-test tests/RichTest.cpp)
+    target_link_libraries(rmchat-rich-test PRIVATE rmchat_rich Qt6::Test)
+    qt_add_resources(rmchat-rich-test "rmchat_rich_test_qml" PREFIX "/rmchat/rich-tests" BASE "tests" FILES tests/Preview.qml)
+    add_test(NAME rmchat-rich COMMAND rmchat-rich-test)
+    set_tests_properties(rmchat-rich PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_QUICK_BACKEND=software")
+endif()

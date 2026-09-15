@@ -1,0 +1,115 @@
+--- a/src/qtfb/FBController.cpp
++++ b/src/qtfb/FBController.cpp
+@@ -1,6 +1,7 @@
+ #include "FBController.h"
+ #include "fbmanagement.h"
+ #include "log.h"
++#include <cmath>
+ 
+ void FBController::setFramebufferID(int fbId){
+     if(framebufferID != fbId){
+@@ -45,15 +46,7 @@
+                 painter->rotate(180);
+                 break;
+         }
+-        if(allowScaling && fillMode != Pad) {
+-            QRect rect = translateToCounteractRotation(convertQTFBRectToScreen(image->rect()));
+-            painter->drawImage(rect, *image, image->rect());
+-        } else {
+-            float _width = width(), _height = height();
+-            if(fbRotation == Deg90L || fbRotation == Deg90R)
+-                std::swap(_width, _height);
+-            painter->drawImage(translateToCounteractRotation(QRect((_width - image->width()) / 2, (_height - image->height()) / 2, width(), height())), *image);
+-        }
++        painter->drawImage(framebufferTargetRect(), *image, image->rect());
+     } else {
+         /*
+         QDEBUG << "Placeholder";
+@@ -101,34 +94,52 @@
+     }
+ }
+ 
++QRect FBController::framebufferTargetRect() {
++    if(allowScaling && fillMode != Pad)
++        return translateToCounteractRotation(convertQTFBRectToScreen(image->rect()));
++
++    float targetWidth = width(), targetHeight = height();
++    if(fbRotation == Deg90L || fbRotation == Deg90R)
++        std::swap(targetWidth, targetHeight);
++    return translateToCounteractRotation(QRect((targetWidth - image->width()) / 2,
++        (targetHeight - image->height()) / 2, width(), height()));
++}
++
+ std::optional<QPoint> FBController::convertPointToQTFBPixels(const QPointF &input) {
+-    QRect fbRect = convertQTFBRectToScreen(image->rect());
+-    float screenWidth = width(), screenHeight = height();
+-    if(fbRotation == Deg90L || fbRotation == Deg90R) {
+-        std::swap(screenWidth, screenHeight);
+-        fbRect = QRect(fbRect.y(), fbRect.x(), fbRect.height(), fbRect.width());
+-    }
+-    if(!fbRect.contains(input.toPoint())) return {};
+-    QPointF center = fbRect.center();
+-    QTransform transform = QTransform().translate(center.x(), center.y());
++    if(!image || image->isNull() || !std::isfinite(width()) || !std::isfinite(height())
++            || width() <= 0 || height() <= 0
++            || !std::isfinite(input.x()) || !std::isfinite(input.y())
++            || input.x() < 0 || input.y() < 0 || input.x() >= width() || input.y() >= height())
++        return {};
++
++    // Invert the same integer destination rectangle and rotation used by paint().
++    // QTFB clients consume raw framebuffer pixels, not scaled window coordinates.
++    const QRect target = framebufferTargetRect();
++    if(target.isEmpty()) return {};
++    QTransform framebufferToItem;
+     switch(fbRotation) {
+         case Deg0: break;
+-        case Deg90L:
+-            transform.rotate(90);
+-            break;
+-        case Deg90R:
+-            transform.rotate(-90);
+-            break;
+-        case Deg180:
+-            transform.rotate(180);
+-            break;
+-    }
+-    transform.scale(
+-        screenWidth / ((float) fbRect.width()),
+-        screenHeight / ((float) fbRect.height())
+-    );
+-    transform.translate(-center.x(), -center.y());
+-    return transform.map(input).toPoint();
++        case Deg90L: framebufferToItem.rotate(-90); break;
++        case Deg90R: framebufferToItem.rotate(90); break;
++        case Deg180: framebufferToItem.rotate(180); break;
++    }
++    framebufferToItem.translate(target.x(), target.y());
++    framebufferToItem.scale(qreal(target.width()) / image->width(),
++                            qreal(target.height()) / image->height());
++    bool invertible = false;
++    const QTransform itemToFramebuffer = framebufferToItem.inverted(&invertible);
++    if(!invertible) return {};
++    const QPointF mapped = itemToFramebuffer.map(input);
++    if(!std::isfinite(mapped.x()) || !std::isfinite(mapped.y())
++            || mapped.x() < 0 || mapped.y() < 0
++            || mapped.x() > image->width() || mapped.y() > image->height())
++        return {};
++
++    // A reversed axis can map its visible near edge to the far image boundary.
++    // Suppress subpixel floating-point noise at exact integer pixel boundaries.
++    constexpr qreal roundingTolerance = 1e-7;
++    return QPoint(qBound(0, int(std::floor(mapped.x() + roundingTolerance)), image->width() - 1),
++                  qBound(0, int(std::floor(mapped.y() + roundingTolerance)), image->height() - 1));
+ }
+ 
+ QRect FBController::translateToCounteractRotation(const QRect &input) {
+--- a/src/qtfb/FBController.h
++++ b/src/qtfb/FBController.h
+@@ -106,6 +106,7 @@
+ 
+     QImage *image = nullptr;
+ 
++    QRect framebufferTargetRect();
+     void mouseEvent(QMouseEvent *me, int inputType);
+     qtfb::DeviceStateChangedContents formRotationChangePacket();
+ };

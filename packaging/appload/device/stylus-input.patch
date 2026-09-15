@@ -1,0 +1,249 @@
+--- a/src/qtfb/FBController.cpp
++++ b/src/qtfb/FBController.cpp
+@@ -2,9 +2,11 @@
+ #include "fbmanagement.h"
+ #include "log.h"
+ #include <cmath>
++#include <limits>
+ 
+ void FBController::setFramebufferID(int fbId){
+     if(framebufferID != fbId){
++        releasePen();
+         QDEBUG << "Re-register framebuffer " << framebufferID << "as" << fbId;
+         qtfb::management::unregisterController(framebufferID);
+     }
+@@ -17,6 +19,7 @@
+ }
+ 
+ void FBController::setActive(bool active){
++    if(!active) releasePen();
+     _active = active;
+     emit activeChanged();
+     emit framebufferSizeChanged();
+@@ -24,6 +27,7 @@
+ }
+ 
+ FBController::~FBController(){
++    releasePen();
+     qtfb::management::unregisterController(framebufferID);
+ }
+ 
+@@ -63,6 +67,7 @@
+ }
+ 
+ void FBController::associateSHM(QImage *image) {
++    if(this->image != image) releasePen();
+     this->image = image;
+     int key = framebufferID;
+     QMetaObject::invokeMethod(this, [this, key]() {
+@@ -105,11 +110,11 @@
+         (targetHeight - image->height()) / 2, width(), height()));
+ }
+ 
+-std::optional<QPoint> FBController::convertPointToQTFBPixels(const QPointF &input) {
++std::optional<QPoint> FBController::convertPointToQTFBPixels(const QPointF &input, bool allowOutside) {
+     if(!image || image->isNull() || !std::isfinite(width()) || !std::isfinite(height())
+             || width() <= 0 || height() <= 0
+             || !std::isfinite(input.x()) || !std::isfinite(input.y())
+-            || input.x() < 0 || input.y() < 0 || input.x() >= width() || input.y() >= height())
++            || (!allowOutside && (input.x() < 0 || input.y() < 0 || input.x() >= width() || input.y() >= height())))
+         return {};
+ 
+     // Invert the same integer destination rectangle and rotation used by paint().
+@@ -131,15 +136,20 @@
+     if(!invertible) return {};
+     const QPointF mapped = itemToFramebuffer.map(input);
+     if(!std::isfinite(mapped.x()) || !std::isfinite(mapped.y())
+-            || mapped.x() < 0 || mapped.y() < 0
+-            || mapped.x() > image->width() || mapped.y() > image->height())
++            || (!allowOutside && (mapped.x() < 0 || mapped.y() < 0
++                || mapped.x() > image->width() || mapped.y() > image->height()))
++            || mapped.x() <= std::numeric_limits<int>::min() || mapped.y() <= std::numeric_limits<int>::min()
++            || mapped.x() >= std::numeric_limits<int>::max() || mapped.y() >= std::numeric_limits<int>::max())
+         return {};
+ 
+     // A reversed axis can map its visible near edge to the far image boundary.
+     // Suppress subpixel floating-point noise at exact integer pixel boundaries.
+     constexpr qreal roundingTolerance = 1e-7;
+-    return QPoint(qBound(0, int(std::floor(mapped.x() + roundingTolerance)), image->width() - 1),
+-                  qBound(0, int(std::floor(mapped.y() + roundingTolerance)), image->height() - 1));
++    const QPoint result(int(std::floor(mapped.x() + roundingTolerance)),
++                        int(std::floor(mapped.y() + roundingTolerance)));
++    if(allowOutside) return result;
++    return QPoint(qBound(0, result.x(), image->width() - 1),
++                  qBound(0, result.y(), image->height() - 1));
+ }
+ 
+ QRect FBController::translateToCounteractRotation(const QRect &input) {
+@@ -200,7 +210,54 @@
+     }
+ }
+ 
++void FBController::releasePen() {
++    if(!penDown) return;
++    penDown = false;
++    if(framebufferID == -1) return;
++    const qtfb::UserInputContents packet {
++        .inputType = INPUT_PEN_RELEASE, .devId = 0,
++        .x = lastPenPosition.x(), .y = lastPenPosition.y(), .d = 0,
++    };
++    qtfb::management::forwardUserInput(framebufferID, packet);
++}
++
++void FBController::penEvent(PenPhase phase, const QPointF &position, qreal pressure) {
++    if(phase != PenPress && phase != PenMove && phase != PenRelease) return;
++    if(phase == PenPress && (penDown || framebufferID == -1 || !_active)) return;
++    if(phase != PenPress && !penDown) return;
++    // An existing stroke may leave the visible image: preserve its coordinates
++    // so client controls cancel a click or drag normally when released outside.
++    const auto mapped = convertPointToQTFBPixels(position, phase != PenPress);
++    if(phase == PenRelease) {
++        // Evdev tablet clients retain the final down position on release.
++        // Send a final move first when lifting also changed the position.
++        if(mapped && *mapped != lastPenPosition)
++            penEvent(PenMove, position, lastPenPressure / qreal(100));
++        releasePen();
++        return;
++    }
++    if(!mapped) return;
++    const int normalizedPressure = std::isfinite(pressure)
++        ? qRound(qBound(qreal(0), pressure, qreal(1)) * 100) : 0;
++    if(phase == PenMove && *mapped == lastPenPosition && normalizedPressure == lastPenPressure) return;
++    lastPenPosition = *mapped;
++    lastPenPressure = normalizedPressure;
++    penDown = true;
++    const qtfb::UserInputContents packet {
++        .inputType = phase == PenPress ? INPUT_PEN_PRESS : INPUT_PEN_UPDATE,
++        .devId = 0, .x = mapped->x(), .y = mapped->y(), .d = normalizedPressure,
++    };
++    qtfb::management::forwardUserInput(framebufferID, packet);
++}
++
+ void FBController::mouseEvent(QMouseEvent *me, int inputType) {
++    // Qt can synthesize a mouse event for an unhandled tablet event. The
++    // tablet-only QML handler owns that sequence; never forward it twice.
++    const auto deviceType = me->pointingDevice()->type();
++    if(deviceType == QInputDevice::DeviceType::Stylus || deviceType == QInputDevice::DeviceType::Airbrush) {
++        me->accept();
++        return;
++    }
+     if(framebufferID != -1 && !me->points().isEmpty()) {
+         const QEventPoint &point = me->points()[0];
+         if(auto conv = convertPointToQTFBPixels(point.position())) {
+--- a/src/qtfb/FBController.h
++++ b/src/qtfb/FBController.h
+@@ -66,7 +66,7 @@
+     std::vector<struct qtfb::DeviceStateChangedContents> buildInitialStatePackets();
+     void setFbRotation(Rotation rotation);
+ 
+-    std::optional<QPoint> convertPointToQTFBPixels(const QPointF &input);
++    std::optional<QPoint> convertPointToQTFBPixels(const QPointF &input, bool allowOutside = false);
+     QRect convertQTFBRectToScreen(const QRect &input);
+     QRect translateToCounteractRotation(const QRect &input);
+ 
+@@ -77,6 +77,12 @@
+ 
+     virtual void keyPressEvent(QKeyEvent *ke) override;
+     virtual void keyReleaseEvent(QKeyEvent *ke) override;
++
++    // Native tablet events are delivered to Qt Quick pointer handlers, not
++    // QQuickItem mouse/touch overrides. The local QML handler calls this bridge.
++    enum PenPhase { PenPress, PenMove, PenRelease };
++    Q_ENUM(PenPhase)
++    Q_INVOKABLE void penEvent(PenPhase phase, const QPointF &position, qreal pressure);
+ 
+     Q_INVOKABLE void virtualKeyboardKeyDown(int key);
+     Q_INVOKABLE void virtualKeyboardKeyUp(int key);
+@@ -104,6 +110,11 @@
+     bool checkingGestureDragDown = false;
+     bool refreshedScreenAlready = false;
+ 
++    bool penDown = false;
++    QPoint lastPenPosition;
++    int lastPenPressure = 0;
++    void releasePen();
++
+     QImage *image = nullptr;
+ 
+     QRect framebufferTargetRect();
+--- a/resources/qml/window.qml
++++ b/resources/qml/window.qml
+@@ -369,6 +369,8 @@
+             onDragDown: () => {
+                 swipeFromTheTop();
+             }
++
++            StylusInputHandler { }
+         }
+ 
+         AppLoadCoordinator {
+--- /dev/null
++++ b/resources/qml/StylusInputHandler.qml
+@@ -0,0 +1,33 @@
++import QtQuick
++import net.asivery.Framebuffer 1.0
++
++// QQuickItem has no tablet-event virtual. Capture only the native stylus path;
++// fingers and physical mice keep the existing FBController event delivery.
++TapHandler {
++    id: stylus
++    target: null
++    enabled: parent.active && parent.visible
++    acceptedDevices: PointerDevice.Stylus | PointerDevice.Airbrush
++    acceptedPointerTypes: PointerDevice.Pen | PointerDevice.Eraser
++    acceptedButtons: Qt.LeftButton
++    gesturePolicy: TapHandler.ReleaseWithinBounds
++    longPressThreshold: 0
++    onPressedChanged: {
++        if (pressed) {
++            parent.forceActiveFocus()
++            parent.penEvent(FBController.PenPress, point.position, point.pressure)
++        }
++    }
++    onGrabChanged: function(transition, eventPoint) {
++        if (transition === PointerDevice.UngrabExclusive || transition === PointerDevice.CancelGrabExclusive) {
++            // On cancellation TapHandler.point may still contain the previous
++            // update. Use the actual release point, localized from the scene.
++            const position = parent.mapFromItem(null, eventPoint.scenePosition)
++            parent.penEvent(FBController.PenRelease, position, 0)
++        }
++    }
++    onPointChanged: {
++        if (pressed)
++            parent.penEvent(FBController.PenMove, point.position, point.pressure)
++    }
++}
+--- a/resources/resources.qrc
++++ b/resources/resources.qrc
+@@ -8,6 +8,7 @@
+ 
+ 		<file>qml/appload.qml</file>
+ 		<file>qml/window.qml</file>
++		<file>qml/StylusInputHandler.qml</file>
+ 		<file>qml/virtualKeyboard/Keyboard.qml</file>
+ 		<file>qml/virtualKeyboard/Key.qml</file>
+ 
+--- a/shim/src/input-shim.cpp
++++ b/shim/src/input-shim.cpp
+@@ -399,7 +399,7 @@
+ {
+     // Disregard original return value.
+     struct input_absinfo *absinfo = reinterpret_cast<struct input_absinfo*>(ptr);
+-    std::memset(absinfo, 0, sizeof(absinfo));
++    std::memset(absinfo, 0, sizeof(*absinfo));
+ 
+     // realIoctl(fd, request, ptr);
+     absinfo->minimum    = minVal;
+@@ -538,6 +538,12 @@
+                                         0, getMaxEventValueForDIGI_Y(),
+                                         0, 0, 0);
+         }
++        if (IS_MATCHING_IOCTL_S(_IOC_READ, 'E', 0x40 + ABS_PRESSURE, sizeof(input_absinfo))) {
++            // Must match pollInputUpdates() above. Qt's evdev tablet handler
++            // normalizes pressure with this range before delivering QTabletEvent.
++            const int maximum = shimInputType == SHIM_INPUT_RM1 || shimInputType == SHIM_INPUT_RM2 ? 4096 : 255;
++            return fakeOrOverrideAbsInfo(fd, request, ptr, realIoctl, 0, maximum, 0, 0, 0);
++        }
+ 
+ 
+         if (cmdDir == _IOC_READ && cmdType == 'E' && cmdNr == 0x20) {

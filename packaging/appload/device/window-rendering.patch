@@ -1,0 +1,22 @@
+--- a/src/qtfb/FBController.cpp
++++ b/src/qtfb/FBController.cpp
+@@ -33,7 +33,10 @@
+     // Do we have an SHM associated?
+     if(this->image && this->_active) {
+         // Cool. Paint it.
+-        painter->resetTransform();
++        // The e-paper scene graph paints directly into its scene painter.
++        // Preserve the item's scene position, parent rotation and device scale;
++        // framebuffer rotation is local to this item.
++        painter->save();
+         switch(fbRotation) {
+             case Deg0: break;
+             case Deg90L:
+@@ -47,6 +50,7 @@
+                 break;
+         }
+         painter->drawImage(framebufferTargetRect(), *image, image->rect());
++        painter->restore();
+     } else {
+         /*
+         QDEBUG << "Placeholder";

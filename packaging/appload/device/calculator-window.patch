@@ -1,0 +1,96 @@
+--- a/resources/qml/window.qml
++++ b/resources/qml/window.qml
+@@ -23,6 +23,7 @@
+ 
+ 
+     property alias appName: _appName.text
++    property string applicationId: ""
+     property bool supportsScaling: false
+     property var qtfbKey: -1
+     readonly property string nativeKeyboardSocket: nativeKeyboardHost.socketPath
+@@ -193,7 +194,8 @@
+             let deltaY = mouse.y - startY
+ 
+             let width = Math.max(minWidth, root.width + deltaX)
+-            let height = Math.max(minHeight, root.height + deltaY)
++            const currentHeight = root.applicationId === "external::repdf" ? root._height : root.height
++            let height = Math.max(minHeight, currentHeight + deltaY)
+             startX = mouse.x
+             startY = mouse.y
+ 
+--- a/resources/qml/appload.qml
++++ b/resources/qml/appload.qml
+@@ -45,7 +45,7 @@
+                 console.log(windowArchetype.errorString());
+                 return;
+             }
+-            win = windowArchetype.createObject(absoluteRoot, { x: 100, y: 100 });
++            win = windowArchetype.createObject(absoluteRoot, { x: 100, y: 100, applicationId: modelData.id });
+             if(win == null) {
+                 console.log("Failed to instantiate a window object!");
+                 return;
+@@ -52,7 +52,7 @@
+             }
+ 
+             win.appName = modelData.name;
+-            win.supportsScaling = modelData.supportsScaling;
++            win.supportsScaling = modelData.id === "external::repdf" || modelData.supportsScaling;
+             win.virtualKeyboardLayout = modelData.virtualKeyboardLayout;
+             win.disablesWindowedMode = modelData.disablesWindowedMode;
+ 
+@@ -91,8 +91,38 @@
+             for(let i of library.applications) {
+                 if(i.id === id) {
+                     console.log("Launching: " + id);
+-                    const window = launchWindow(i, args, env);
+-                    if(i.disablesWindowedMode || !windowed) window.maximize();
++                    const utilityWindow = (id === "external::recalc" || id === "external::repdf") && windowed;
++                    let window;
++                    if (utilityWindow) {
++                        const windows = absoluteRoot.children;
++                        for (let index = 0; index < windows.length; ++index) {
++                            const existing = windows[index];
++                            if (existing.applicationId === id) {
++                                window = existing;
++                                break;
++                            }
++                        }
++                    }
++                    if (!window) window = launchWindow(i, args, env);
++                    if (!window) return;
++                    if (utilityWindow) {
++                        // maximize() toggles; only call it to leave fullscreen.
++                        if (window.fullscreen) window.maximize();
++                        window.minimized = false;
++                        window.visible = true;
++                        // Keep both utility windows on fixed foreground levels.
++                        // Repeated requests cannot grow z or leave the other on top.
++                        const windows = absoluteRoot.children;
++                        for (let index = 0; index < windows.length; ++index) {
++                            const other = windows[index];
++                            if (other !== window && (other.applicationId === "external::recalc" || other.applicationId === "external::repdf"))
++                                other.z = 100;
++                        }
++                        window.z = 101;
++                        window.forceActiveFocus();
++                    } else if (i.disablesWindowedMode || !windowed) {
++                        window.maximize();
++                    }
+                     return;
+                 }
+             }
+@@ -236,11 +266,12 @@
+                 MouseArea {
+                     anchors.fill: parent
+                     onClicked: () => {
+-                        launchWindow(modelData).maximize();
++                        const window = launchWindow(modelData);
++                        if (window) window.maximize();
+                     }
+                     onPressAndHold: () => {
+                         const window = launchWindow(modelData);
+-                        if(modelData.disablesWindowedMode) {
++                        if(window && modelData.disablesWindowedMode) {
+                             window.maximize();
+                         }
+                     }

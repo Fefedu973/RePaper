@@ -1,0 +1,99 @@
+--- a/appload.pro
++++ b/appload.pro
+@@ -23,3 +23,6 @@
+ SOURCES += src/native-documents-host/NativeAgendaHeader.cpp
+ HEADERS += src/native-documents-host/NativeAgendaHeader.h
+ CONFIG += c++17
++
++SOURCES += src/native-viewport-host/NativeViewportHost.cpp
++HEADERS += src/native-viewport-host/NativeViewportHost.h
+--- a/xovi/template/appload.pro
++++ b/xovi/template/appload.pro
+@@ -19,3 +19,6 @@
+ SOURCES += src/native-documents-host/NativeAgendaHeader.cpp
+ HEADERS += src/native-documents-host/NativeAgendaHeader.h
+ CONFIG += c++17
++
++SOURCES += src/native-viewport-host/NativeViewportHost.cpp
++HEADERS += src/native-viewport-host/NativeViewportHost.h
+--- a/src/main.cpp
++++ b/src/main.cpp
+@@ -12,6 +12,7 @@
+ 
+ #include "qtfb/FBController.h"
+ #include "native-keyboard-host/NativeKeyboardHost.h"
++#include "native-viewport-host/NativeViewportHost.h"
+ #include "native-documents-host/NativeDocumentHost.h"
+ #include "native-documents-host/NativeAgendaText.h"
+ #include "native-documents-host/NativeAgendaHeader.h"
+@@ -68,6 +69,7 @@
+     qmlRegisterType<AppLoadApplication>("net.asivery.AppLoad", 1, 0, "AppLoadApplication");
+     qmlRegisterType<FBController>("net.asivery.Framebuffer", 1, 0, "FBController");
+     qmlRegisterType<NativeKeyboardHost>("net.asivery.Framebuffer", 1, 0, "NativeKeyboardHost");
++    qmlRegisterType<NativeViewportHost>("net.asivery.Framebuffer", 1, 0, "NativeViewportHost");
+     qmlRegisterType<NativeDocumentHost>("net.asivery.AppLoad", 1, 0, "NativeDocumentHost");
+     qmlRegisterType<NativeAgendaText>("net.asivery.AppLoad", 1, 0, "NativeAgendaText");
+     qmlRegisterType<NativeAgendaHeader>("net.asivery.AppLoad", 1, 0, "NativeAgendaHeader");
+--- a/xovi/template/src/main.cpp
++++ b/xovi/template/src/main.cpp
+@@ -3,6 +3,7 @@
+ 
+ #include "qtfb/FBController.h"
+ #include "native-keyboard-host/NativeKeyboardHost.h"
++#include "native-viewport-host/NativeViewportHost.h"
+ #include "native-documents-host/NativeDocumentHost.h"
+ #include "native-documents-host/NativeAgendaText.h"
+ #include "native-documents-host/NativeAgendaHeader.h"
+@@ -31,6 +32,7 @@
+         qmlRegisterType<AppLoadApplication>("net.asivery.AppLoad", 1, 0, "AppLoadApplication");
+         qmlRegisterType<FBController>("net.asivery.Framebuffer", 1, 0, "FBController");
+         qmlRegisterType<NativeKeyboardHost>("net.asivery.Framebuffer", 1, 0, "NativeKeyboardHost");
++        qmlRegisterType<NativeViewportHost>("net.asivery.Framebuffer", 1, 0, "NativeViewportHost");
+         qmlRegisterType<NativeDocumentHost>("net.asivery.AppLoad", 1, 0, "NativeDocumentHost");
+         qmlRegisterType<NativeAgendaText>("net.asivery.AppLoad", 1, 0, "NativeAgendaText");
+         qmlRegisterType<NativeAgendaHeader>("net.asivery.AppLoad", 1, 0, "NativeAgendaHeader");
+--- a/resources/qml/window.qml
++++ b/resources/qml/window.qml
+@@ -27,6 +27,7 @@
+     property bool supportsScaling: false
+     property var qtfbKey: -1
+     readonly property string nativeKeyboardSocket: nativeKeyboardHost.socketPath
++    readonly property string nativeViewportSocket: nativeViewportHost.socketPath
+     property int appPid: -1
+     property bool minimized: false
+     property bool fullscreen: false
+@@ -355,6 +356,13 @@
+         FBController {
+             id: windowCanvas
+ 
++            NativeViewportHost {
++                id: nativeViewportHost
++                anchors.fill: parent
++                framebufferID: root.applicationId === "external::repdf" ? root.qtfbKey : -1
++                framebufferItem: windowCanvas
++            }
++
+             NativeKeyboardHost {
+                 id: nativeKeyboardHost
+                 anchors.fill: parent
+@@ -365,7 +373,8 @@
+ 
+             visible: qtfbKey != -1
+             allowScaling: true
+-            fillMode: FBController.PreserveAspectFit
++            fillMode: root.applicationId === "external::repdf" && nativeViewportHost.connected
++                ? FBController.Stretch : FBController.PreserveAspectFit
+             framebufferID: qtfbKey
+             focus: qtfbKey != -1
+ 
+--- a/resources/qml/appload.qml
++++ b/resources/qml/appload.qml
+@@ -78,6 +78,8 @@
+             const environment = Object.assign({}, extraEnv || {});
+             if (qtfbKey !== -1 && win.nativeKeyboardSocket.length > 0)
+                 environment.REPAPER_NATIVE_KEYBOARD_SOCKET = win.nativeKeyboardSocket;
++            if (modelData.id === "external::repdf" && win.nativeViewportSocket.length > 0)
++                environment.REPAPER_VIEWPORT_SOCKET = win.nativeViewportSocket;
+             win.appPid = library.launchExternal(modelData.id, qtfbKey, extraArgs || [], environment);
+         }
+ 

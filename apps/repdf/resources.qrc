@@ -1,0 +1,5 @@
+<RCC>
+  <qresource prefix="/repdf">
+    <file>qml/Main.qml</file>
+  </qresource>
+</RCC>

@@ -1,0 +1,42 @@
+--- a/resources/qml/window.qml
++++ b/resources/qml/window.qml
+@@ -359,7 +359,7 @@
+             NativeViewportHost {
+                 id: nativeViewportHost
+                 anchors.fill: parent
+-                framebufferID: root.applicationId === "external::repdf" ? root.qtfbKey : -1
++                framebufferID: (root.applicationId === "external::repdf" || root.applicationId === "external::recalc") ? root.qtfbKey : -1
+                 framebufferItem: windowCanvas
+             }
+ 
+@@ -373,7 +373,7 @@
+ 
+             visible: qtfbKey != -1
+             allowScaling: true
+-            fillMode: root.applicationId === "external::repdf" && nativeViewportHost.connected
++            fillMode: (root.applicationId === "external::repdf" || root.applicationId === "external::recalc") && nativeViewportHost.connected
+                 ? FBController.Stretch : FBController.PreserveAspectFit
+             framebufferID: qtfbKey
+             focus: qtfbKey != -1
+--- a/resources/qml/appload.qml
++++ b/resources/qml/appload.qml
+@@ -68,6 +68,10 @@
+             [win.minWidth, win.minHeight] = [win.implicitWidth, win.implicitHeight] = [minimumResolutionWidth, Math.floor(minimumResolutionWidth / realAspectRatio)];
+             [win.scaledContentWidth, win.scaledContentHeight] = [width, Math.floor(width / realAspectRatio)];
+ 
++            if (modelData.id === "external::recalc") {
++                win.width = Math.min(900, Math.max(400, win.globalWidth - 160));
++                win._height = Math.min(1280, Math.max(700, win.globalHeight - 240));
++            }
+             win.qtfbKey = qtfbKey;
+             win.closed.connect(() => win.destroy());
+         }
+@@ -78,7 +82,7 @@
+             const environment = Object.assign({}, extraEnv || {});
+             if (qtfbKey !== -1 && win.nativeKeyboardSocket.length > 0)
+                 environment.REPAPER_NATIVE_KEYBOARD_SOCKET = win.nativeKeyboardSocket;
+-            if (modelData.id === "external::repdf" && win.nativeViewportSocket.length > 0)
++            if ((modelData.id === "external::repdf" || modelData.id === "external::recalc") && win.nativeViewportSocket.length > 0)
+                 environment.REPAPER_VIEWPORT_SOCKET = win.nativeViewportSocket;
+             win.appPid = library.launchExternal(modelData.id, qtfbKey, extraArgs || [], environment);
+         }

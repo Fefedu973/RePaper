@@ -1,0 +1,3 @@
+module RePaper.Keyboard
+KeyboardController 1.0 KeyboardController.qml
+TouchKeyboard 1.0 TouchKeyboard.qml

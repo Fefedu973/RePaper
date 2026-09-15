@@ -1,0 +1,36 @@
+name: Signaler un probleme
+description: Un comportement inattendu dans un mod RePaper
+labels: [bug]
+body:
+  - type: input
+    id: component
+    attributes:
+      label: Mod concerne
+      placeholder: reInk, reSelect, reStencil, reCalc, rePDF, reAgenda, reMoodle, AppLoad
+    validations:
+      required: true
+  - type: input
+    id: platform
+    attributes:
+      label: Modele et version exacte du systeme, ou environnement PC
+      placeholder: Paper Pro ferrari / 3.28.0.169 / Qt 6.10.3
+    validations:
+      required: true
+  - type: input
+    id: revision
+    attributes:
+      label: Revision Git ou empreinte du build
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Etapes, resultat attendu et resultat observe
+      description: Un exemple fictif ou un petit document de demonstration facilite la reproduction.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Capture ou journal utile
+      description: Joindre uniquement les extraits utiles, avec des donnees de demonstration.

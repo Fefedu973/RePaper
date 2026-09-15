@@ -1,0 +1,68 @@
+name: Compilation et tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  qt-tests:
+    name: ${{ matrix.component }} · Qt 6
+    runs-on: ubuntu-22.04
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - component: Applications
+            source: .
+          - component: Editeur natif (banc PC)
+            source: extensions/reink
+    env:
+      QT_QPA_PLATFORM: offscreen
+      QT_QUICK_BACKEND: software
+    steps:
+      - name: Sources et PDFio
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          submodules: recursive
+          persist-credentials: false
+      - name: Dependances Ubuntu
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake ninja-build g++ pkg-config python3 \
+            qt6-base-dev qt6-declarative-dev qt6-tools-dev-tools \
+            qml6-module-qtquick qml6-module-qtquick-controls qml6-module-qtquick-layouts \
+            qml6-module-qtquick-templates qml6-module-qtquick-window \
+            qml6-module-qtqml-workerscript libqt6sql6-sqlite libqt6svg6 \
+            libssl-dev zlib1g-dev libboost-dev
+      - name: Configurer
+        run: cmake -S "${{ matrix.source }}" -B build/ci -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON
+      - name: Compiler
+        run: cmake --build build/ci --parallel 2
+      - name: Tester
+        run: ctest --test-dir build/ci --output-on-failure
+
+  moodle-relay:
+    name: Portail Moodle
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: moodle-connect
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22.16.0'
+          cache: npm
+          cache-dependency-path: moodle-connect/package-lock.json
+      - run: npm ci
+      - run: npm test
+      - run: npm run typecheck

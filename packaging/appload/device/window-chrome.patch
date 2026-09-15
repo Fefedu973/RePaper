@@ -1,0 +1,76 @@
+--- a/resources/qml/window.qml
++++ b/resources/qml/window.qml
+@@ -8,7 +8,7 @@
+     id: root
+     Drag.active: topbarDragHandle.drag.active && !fullscreen
+     width: root.globalWidth / 3
+-    height: _height + topbar.height
++    height: _height + topbar.height + resizeChrome.height
+     z: 100
+ 
+     property int globalWidth: 0
+@@ -139,10 +139,11 @@
+ 
+     MouseArea {
+         id: resizeHandle
+-        anchors.bottom: parent.bottom
++        anchors.bottom: resizeChrome.bottom
+         anchors.right: parent.right
+         width: 100
+-        height: 100
++        height: resizeChrome.height
++        visible: resizeChrome.visible
+         cursorShape: Qt.SizeFDiagCursor
+         enabled: !fullscreen && !minimized
+         z: 10001
+@@ -160,8 +161,7 @@
+             let deltaY = mouse.y - startY
+ 
+             let width = Math.max(minWidth, root.width + deltaX)
+-            const currentHeight = root.applicationId === "external::repdf" ? root._height : root.height
+-            let height = Math.max(minHeight, currentHeight + deltaY)
++            let height = Math.max(minHeight, root._height + deltaY)
+             startX = mouse.x
+             startY = mouse.y
+ 
+@@ -172,6 +172,31 @@
+ 
+             root.width = width;
+             root._height = height;
++        }
++    }
++
++    Rectangle {
++        id: resizeChrome
++        anchors.bottom: parent.bottom
++        width: parent.width
++        height: visible ? 56 : 0
++        visible: !root.fullscreen && !root.minimized
++        color: "white"
++        z: 2001
++
++        Rectangle { width: parent.width; height: 2; color: "black" }
++        // A visible grip in window chrome, outside every application pixel.
++        Repeater {
++            model: 3
++            Rectangle {
++                required property int index
++                x: resizeChrome.width - 26 - index * 12
++                y: resizeChrome.height - 22
++                width: 22
++                height: 2
++                rotation: -45
++                color: "black"
++            }
+         }
+     }
+ 
+@@ -343,7 +368,7 @@
+     Rectangle {
+         id: mainWindowView
+         anchors.top: topbar.bottom
+-        height: parent.height - topbar.height
++        height: parent.height - topbar.height - resizeChrome.height
+         width: parent.width
+         clip: true
+         visible: !topbarDragHandle.drag.active

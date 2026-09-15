@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Connexion RMChat</title>
+  <link rel="stylesheet" href="popup.css">
+  <script type="module" src="popup.mjs"></script>
+</head>
+<body>
+  <main>
+    <p class="eyebrow">REPAPER · CONNEXION LOCALE</p>
+    <h1>ChatGPT sur RMChat</h1>
+    <p>Connectez-vous dans ce navigateur, puis exportez votre session pour l’importer dans RMChat.</p>
+    <a class="button secondary" href="https://chatgpt.com/" target="_blank" rel="noopener noreferrer">Ouvrir ChatGPT</a>
+    <button id="export" type="button">Exporter la session</button>
+    <p id="status" class="status" role="status" aria-live="polite"></p>
+    <p class="notice">Le fichier contient votre session en clair : importez-le dans le coffre chiffré RMChat, puis supprimez-le.</p>
+  </main>
+</body>
+</html>

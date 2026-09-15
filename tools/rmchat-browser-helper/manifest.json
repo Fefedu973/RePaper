@@ -1,0 +1,16 @@
+{
+  "manifest_version": 3,
+  "name": "RMChat — connexion locale",
+  "version": "0.1.0",
+  "description": "Exporte votre session ChatGPT dans un fichier local, uniquement à votre demande.",
+  "minimum_chrome_version": "119",
+  "permissions": ["cookies"],
+  "host_permissions": ["https://chatgpt.com/*"],
+  "action": {
+    "default_title": "Connexion RMChat",
+    "default_popup": "popup.html"
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'none'; connect-src 'none'; base-uri 'none'; form-action 'none'"
+  }
+}

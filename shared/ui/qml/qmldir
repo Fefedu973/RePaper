@@ -1,0 +1,12 @@
+singleton Theme 1.0 Theme.qml
+Button 1.0 Button.qml
+IconButton 1.0 IconButton.qml
+Icon 1.0 Icon.qml
+TextField 1.0 TextField.qml
+Dialog 1.0 Dialog.qml
+Menu 1.0 Menu.qml
+MenuItem 1.0 MenuItem.qml
+ComboBox 1.0 ComboBox.qml
+CheckBox 1.0 CheckBox.qml
+ScrollBar 1.0 ScrollBar.qml
+Notice 1.0 Notice.qml

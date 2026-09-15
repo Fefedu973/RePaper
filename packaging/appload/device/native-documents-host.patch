@@ -1,0 +1,83 @@
+--- a/appload.pro
++++ b/appload.pro
+@@ -16,3 +16,10 @@
+ INCLUDEPATH += src
+ SOURCES += src/native-keyboard-host/NativeKeyboardHost.cpp
+ HEADERS += src/native-keyboard-host/NativeKeyboardHost.h
++SOURCES += src/native-documents-host/NativeDocumentHost.cpp
++HEADERS += src/native-documents-host/NativeDocumentHost.h
++SOURCES += src/native-documents-host/NativeAgendaText.cpp
++HEADERS += src/native-documents-host/NativeAgendaText.h
++SOURCES += src/native-documents-host/NativeAgendaHeader.cpp
++HEADERS += src/native-documents-host/NativeAgendaHeader.h
++CONFIG += c++17
+--- a/xovi/template/appload.pro
++++ b/xovi/template/appload.pro
+@@ -12,3 +12,10 @@
+ INCLUDEPATH += src
+ SOURCES += src/native-keyboard-host/NativeKeyboardHost.cpp
+ HEADERS += src/native-keyboard-host/NativeKeyboardHost.h
++SOURCES += src/native-documents-host/NativeDocumentHost.cpp
++HEADERS += src/native-documents-host/NativeDocumentHost.h
++SOURCES += src/native-documents-host/NativeAgendaText.cpp
++HEADERS += src/native-documents-host/NativeAgendaText.h
++SOURCES += src/native-documents-host/NativeAgendaHeader.cpp
++HEADERS += src/native-documents-host/NativeAgendaHeader.h
++CONFIG += c++17
+--- a/src/main.cpp
++++ b/src/main.cpp
+@@ -12,6 +12,9 @@
+ 
+ #include "qtfb/FBController.h"
+ #include "native-keyboard-host/NativeKeyboardHost.h"
++#include "native-documents-host/NativeDocumentHost.h"
++#include "native-documents-host/NativeAgendaText.h"
++#include "native-documents-host/NativeAgendaHeader.h"
+ #include "qtfb/fbmanagement.h"
+ 
+ #include <dlfcn.h>
+@@ -65,6 +68,10 @@
+     qmlRegisterType<AppLoadApplication>("net.asivery.AppLoad", 1, 0, "AppLoadApplication");
+     qmlRegisterType<FBController>("net.asivery.Framebuffer", 1, 0, "FBController");
+     qmlRegisterType<NativeKeyboardHost>("net.asivery.Framebuffer", 1, 0, "NativeKeyboardHost");
++    qmlRegisterType<NativeDocumentHost>("net.asivery.AppLoad", 1, 0, "NativeDocumentHost");
++    qmlRegisterType<NativeAgendaText>("net.asivery.AppLoad", 1, 0, "NativeAgendaText");
++    qmlRegisterType<NativeAgendaHeader>("net.asivery.AppLoad", 1, 0, "NativeAgendaHeader");
++    qmlRegisterType(QUrl(QStringLiteral("qrc:/appload/qml/RePaperNativeDocuments.qml")), "net.asivery.AppLoad", 1, 0, "RePaperNativeDocuments");
+     qmlRegisterSingletonType<AppLoadLauncher>("net.asivery.AppLoad", 1, 0, "AppLoadLauncher", &AppLoadLauncher::qmlSingleton);
+     qmlRegisterSingletonType<AppLoadEmuOnly>("net.asivery.AppLoad", 1, 0, "AppLoadEmuOnly", &AppLoadEmuOnly::qmlSingleton);
+     engine.load(QUrl(QStringLiteral("./_start.qml")));
+--- a/xovi/template/src/main.cpp
++++ b/xovi/template/src/main.cpp
+@@ -3,6 +3,9 @@
+ 
+ #include "qtfb/FBController.h"
+ #include "native-keyboard-host/NativeKeyboardHost.h"
++#include "native-documents-host/NativeDocumentHost.h"
++#include "native-documents-host/NativeAgendaText.h"
++#include "native-documents-host/NativeAgendaHeader.h"
+ #include "qtfb/fbmanagement.h"
+ 
+ #include "AppLoadCoordinator.h"
+@@ -28,6 +31,10 @@
+         qmlRegisterType<AppLoadApplication>("net.asivery.AppLoad", 1, 0, "AppLoadApplication");
+         qmlRegisterType<FBController>("net.asivery.Framebuffer", 1, 0, "FBController");
+         qmlRegisterType<NativeKeyboardHost>("net.asivery.Framebuffer", 1, 0, "NativeKeyboardHost");
++        qmlRegisterType<NativeDocumentHost>("net.asivery.AppLoad", 1, 0, "NativeDocumentHost");
++        qmlRegisterType<NativeAgendaText>("net.asivery.AppLoad", 1, 0, "NativeAgendaText");
++        qmlRegisterType<NativeAgendaHeader>("net.asivery.AppLoad", 1, 0, "NativeAgendaHeader");
++        qmlRegisterType(QUrl(QStringLiteral("qrc:/appload/qml/RePaperNativeDocuments.qml")), "net.asivery.AppLoad", 1, 0, "RePaperNativeDocuments");
+         qmlRegisterSingletonType<AppLoadLauncher>("net.asivery.AppLoad", 1, 0, "AppLoadLauncher", &AppLoadLauncher::qmlSingleton);
+         qt_resource_rebuilder$qmldiff_add_external_diff(r$apploadDiff, "AppLoad hooks in main UI");
+ 
+--- a/resources/resources.qrc
++++ b/resources/resources.qrc
+@@ -9,6 +9,8 @@
+ 		<file>qml/appload.qml</file>
+ 		<file>qml/window.qml</file>
+ 		<file>qml/StylusInputHandler.qml</file>
++		<file>qml/RePaperNativeDocuments.qml</file>
++		<file>qml/RePaperNativeImports.qml</file>
+ 		<file>qml/virtualKeyboard/Keyboard.qml</file>
+ 		<file>qml/virtualKeyboard/Key.qml</file>
+ 

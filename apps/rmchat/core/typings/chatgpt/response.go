@@ -1,0 +1,78 @@
+package chatgpt
+
+type ChatGPTResponse struct {
+	Message        Message     `json:"message"`
+	ConversationID string      `json:"conversation_id"`
+	Error          interface{} `json:"error"`
+}
+type Message struct {
+	ID         string      `json:"id"`
+	Author     Author      `json:"author"`
+	CreateTime float64     `json:"create_time"`
+	UpdateTime interface{} `json:"update_time"`
+	Content    Content     `json:"content"`
+	EndTurn    interface{} `json:"end_turn"`
+	Weight     float64     `json:"weight"`
+	Metadata   Metadata    `json:"metadata"`
+	Recipient  string      `json:"recipient"`
+	// Channel 区分消息通道: "final"(正文) / "commentary"(思考前导等) /
+	// null(旧格式或工具消息)。新版 SSE 用它区分正文与辅助内容。
+	Channel string `json:"channel,omitempty"`
+}
+
+type Content struct {
+	ContentType string        `json:"content_type"`
+	Parts       []interface{} `json:"parts"`
+}
+
+type Author struct {
+	Role     string                 `json:"role"`
+	Name     interface{}            `json:"name"`
+	Metadata map[string]interface{} `json:"metadata"`
+}
+
+type Metadata struct {
+	Timestamp     string         `json:"timestamp_"`
+	Citations     []Citation     `json:"citations,omitempty"`
+	MessageType   string         `json:"message_type"`
+	FinishDetails *FinishDetails `json:"finish_details"`
+	ModelSlug     string         `json:"model_slug"`
+	// IsThinkingPreambleMessage 标记"思考前导"消息(新版 SSE)。
+	// 这类消息是 assistant 在正式回答前的引导语,不应输出给用户。
+	IsThinkingPreambleMessage bool `json:"is_thinking_preamble_message,omitempty"`
+}
+type Citation struct {
+	Metadata CitaMeta `json:"metadata"`
+	StartIx  int      `json:"start_ix"`
+	EndIx    int      `json:"end_ix"`
+}
+type CitaMeta struct {
+	URL   string `json:"url"`
+	Title string `json:"title"`
+}
+type FinishDetails struct {
+	Type string `json:"type"`
+	Stop string `json:"stop"`
+}
+type DalleContent struct {
+	AssetPointer string `json:"asset_pointer"`
+	Metadata     struct {
+		Dalle struct {
+			Prompt string `json:"prompt"`
+		} `json:"dalle"`
+	} `json:"metadata"`
+}
+
+type ProofWork struct {
+	Difficulty string `json:"difficulty,omitempty"`
+	Required   bool   `json:"required"`
+	Seed       string `json:"seed,omitempty"`
+}
+
+type RequirementsResponse struct {
+	Proof     ProofWork `json:"proofofwork,omitempty"`
+	Turnstile struct {
+		Required bool `json:"required"`
+	} `json:"turnstile"`
+	Token string `json:"token"`
+}

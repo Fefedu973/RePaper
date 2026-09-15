@@ -1,0 +1,140 @@
+--- a/src/qtfb/FBController.h
++++ b/src/qtfb/FBController.h
+@@ -1,6 +1,7 @@
+ #pragma once
+ 
+ #include <QObject>
++#include <QGuiApplication>
+ #include <QPoint>
+ #include <QPointF>
+ #include <QProcess>
+@@ -20,6 +21,7 @@
+ class FBController : public QQuickPaintedItem
+ {
+     Q_PROPERTY(bool active READ active NOTIFY activeChanged)
++    Q_PROPERTY(bool tabletHandlerActive READ tabletHandlerActive NOTIFY tabletHandlerActiveChanged)
+     Q_PROPERTY(int framebufferID MEMBER framebufferID WRITE setFramebufferID)
+     Q_PROPERTY(bool allowScaling MEMBER allowScaling)
+     Q_PROPERTY(int refreshMode READ refreshMode NOTIFY refreshModeChanged)
+@@ -29,7 +31,7 @@
+     Q_PROPERTY(bool sendFlippedRotationToClient MEMBER sendFlippedRotationToClient)
+     Q_OBJECT
+ public:
+-    explicit FBController(QQuickItem *parent = nullptr) : QQuickPaintedItem(parent) { setAcceptTouchEvents(true); setAcceptedMouseButtons((Qt::MouseButtons) 0xFFFFFFFF); setFocusPolicy(Qt::StrongFocus); }
++    explicit FBController(QQuickItem *parent = nullptr) : QQuickPaintedItem(parent) { setAcceptTouchEvents(true); setAcceptedMouseButtons((Qt::MouseButtons) 0xFFFFFFFF); setFocusPolicy(Qt::StrongFocus); if(qGuiApp) qGuiApp->installEventFilter(this); }
+     virtual ~FBController();
+ 
+     enum FillMode
+@@ -57,6 +59,8 @@
+     void setRefreshMode(int refreshMode);
+ 
+     bool active() const;
++    bool tabletHandlerActive() const { return _tabletHandlerActive; }
++    bool eventFilter(QObject *watched, QEvent *event) override;
+ 
+     void markedUpdate(const QRect &rect = QRect());
+     void setActive(bool active); // NOT QML ACCESSIBLE!
+@@ -73,6 +77,7 @@
+     virtual void mousePressEvent(QMouseEvent *me) override;
+     virtual void mouseMoveEvent(QMouseEvent *me) override;
+     virtual void mouseReleaseEvent(QMouseEvent *me) override;
++    void mouseUngrabEvent() override;
+     virtual void touchEvent(QTouchEvent *me) override;
+ 
+     virtual void keyPressEvent(QKeyEvent *ke) override;
+@@ -92,6 +97,7 @@
+ 
+ signals:
+     void activeChanged();
++    void tabletHandlerActiveChanged();
+     void dragDown();
+     void requestFullRefresh();
+     void refreshModeChanged();
+@@ -111,6 +117,7 @@
+     bool refreshedScreenAlready = false;
+ 
+     bool penDown = false;
++    bool _tabletHandlerActive = false;
+     QPoint lastPenPosition;
+     int lastPenPressure = 0;
+     void releasePen();
+--- a/src/qtfb/FBController.cpp
++++ b/src/qtfb/FBController.cpp
+@@ -3,6 +3,7 @@
+ #include "log.h"
+ #include <cmath>
+ #include <limits>
++#include <QQuickWindow>
+ 
+ void FBController::setFramebufferID(int fbId){
+     if(framebufferID != fbId){
+@@ -250,11 +251,43 @@
+     qtfb::management::forwardUserInput(framebufferID, packet);
+ }
+ 
++bool FBController::eventFilter(QObject *watched, QEvent *event) {
++    if(watched != window()) return false;
++    bool useTabletHandler = _tabletHandlerActive;
++    if(event->type() == QEvent::TabletPress || event->type() == QEvent::TabletMove
++            || event->type() == QEvent::TabletRelease) {
++        useTabletHandler = true;
++    } else if(event->type() == QEvent::MouseButtonPress || event->type() == QEvent::MouseMove
++            || event->type() == QEvent::MouseButtonRelease) {
++        const auto *mouse = static_cast<QMouseEvent *>(event);
++        const auto deviceType = mouse->pointingDevice()->type();
++        if((deviceType == QInputDevice::DeviceType::Stylus || deviceType == QInputDevice::DeviceType::Airbrush)
++                && mouse->source() == Qt::MouseEventNotSynthesized)
++            useTabletHandler = false;
++    }
++    // Xochitl feeds its digitizer into handleMouseEvent using a Stylus device.
++    // TapHandler's point is one event behind on that path. Keep its exclusive
++    // grab disabled so the actual QMouseEvent reaches mouseEvent() unchanged.
++    // Genuine Qt tablet events still use the local handler and its pen grabs.
++    if(useTabletHandler != _tabletHandlerActive) {
++        _tabletHandlerActive = useTabletHandler;
++        emit tabletHandlerActiveChanged();
++    }
++    return false;
++}
++
+ void FBController::mouseEvent(QMouseEvent *me, int inputType) {
+-    // Qt can synthesize a mouse event for an unhandled tablet event. The
+-    // tablet-only QML handler owns that sequence; never forward it twice.
+     const auto deviceType = me->pointingDevice()->type();
+     if(deviceType == QInputDevice::DeviceType::Stylus || deviceType == QInputDevice::DeviceType::Airbrush) {
++        // Only Qt's automatic fallback duplicates the genuine tablet route.
++        // Xochitl's native digitizer mouse events are the original input path.
++        if(me->source() != Qt::MouseEventSynthesizedByQt) {
++            const PenPhase phase = inputType == INPUT_PEN_PRESS ? PenPress
++                : inputType == INPUT_PEN_RELEASE ? PenRelease : PenMove;
++            const qreal pressure = me->pointingDevice()->capabilities().testFlag(QInputDevice::Capability::Pressure)
++                ? me->points().value(0).pressure() : qreal(1);
++            penEvent(phase, me->position(), phase == PenRelease ? 0 : pressure);
++        }
+         me->accept();
+         return;
+     }
+@@ -272,6 +305,12 @@
+             me->accept();
+         }
+     }
++}
++
++void FBController::mouseUngrabEvent() {
++    // Losing the host grab must cancel a client button/drag without clicking it.
++    if(penDown) penEvent(PenRelease, QPointF(-1, -1), 0);
++    QQuickPaintedItem::mouseUngrabEvent();
+ }
+ 
+ void FBController::mousePressEvent(QMouseEvent *me) {
+--- a/resources/qml/StylusInputHandler.qml
++++ b/resources/qml/StylusInputHandler.qml
+@@ -6,7 +6,7 @@
+ TapHandler {
+     id: stylus
+     target: null
+-    enabled: parent.active && parent.visible
++    enabled: parent.active && parent.visible && parent.tabletHandlerActive
+     acceptedDevices: PointerDevice.Stylus | PointerDevice.Airbrush
+     acceptedPointerTypes: PointerDevice.Pen | PointerDevice.Eraser
+     acceptedButtons: Qt.LeftButton

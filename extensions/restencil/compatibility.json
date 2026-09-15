@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "project": "restencil-active-page",
+  "version": "0.1.0",
+  "deviceExtensionEnabled": false,
+  "deviceValidation": "not-performed",
+  "target": {
+    "model": "ferrari",
+    "firmware": "3.28.0.169",
+    "qt": "6.10.3",
+    "xochitlSha256": "43a9d5d0acc5b998264c16586e11b848f3b83d2d63b5fd322b09c0977d94d3d4"
+  },
+  "capabilities": {
+    "emulator.activePage.insertNativeGeometry": "available-with-emulator-flag",
+    "xochitl.activePage.insertNativeStroke": "unavailable",
+    "xochitl.editSidebar": "unavailable"
+  },
+  "blockers": [
+    "No verified Line value-type construction ABI for SceneController::addDrawingLine(Line)",
+    "No verified editor sidebar attachment point on the exact target firmware",
+    "No device insertion, native undo or selection round-trip test"
+  ],
+  "references": {
+    "apploadPr59": "40506d47427123f07030bb2e83453a43d035b16a",
+    "smartRemarkable": "cb787065281b7211b012bd5e5d9be751fe5adaef",
+    "inkling": "089efb2c9f24ce64127c6fc4d7fd30f93ae5ad94"
+  }
+}
