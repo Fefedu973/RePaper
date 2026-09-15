@@ -15,7 +15,8 @@ if [[ "${1:-}" == "--install-deps" ]]; then
         qt6-base-dev qt6-declarative-dev qt6-tools-dev-tools \
         qml6-module-qtquick qml6-module-qtquick-controls qml6-module-qtquick-layouts \
         qml6-module-qtquick-templates qml6-module-qtquick-window \
-        qml6-module-qtqml-workerscript libqt6sql6-sqlite libqt6svg6 libssl-dev zlib1g-dev libboost-dev
+        qml6-module-qtqml-workerscript libqt6sql6-sqlite libqt6svg6 libssl-dev zlib1g-dev libboost-dev \
+        libgl1-mesa-dev libegl1-mesa-dev
 fi
 
 git -C "$repo" submodule update --init external/pdfio

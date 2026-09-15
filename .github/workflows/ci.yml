@@ -39,7 +39,7 @@ jobs:
             qml6-module-qtquick qml6-module-qtquick-controls qml6-module-qtquick-layouts \
             qml6-module-qtquick-templates qml6-module-qtquick-window \
             qml6-module-qtqml-workerscript libqt6sql6-sqlite libqt6svg6 \
-            libssl-dev zlib1g-dev libboost-dev
+            libssl-dev zlib1g-dev libboost-dev libgl1-mesa-dev libegl1-mesa-dev
       - name: Configurer
         run: cmake -S "${{ matrix.source }}" -B build/ci -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON
       - name: Compiler
@@ -63,6 +63,8 @@ jobs:
           node-version: '22.16.0'
           cache: npm
           cache-dependency-path: moodle-connect/package-lock.json
+      - name: Version npm du verrou de dependances
+        run: npm install --global npm@11.6.2
       - run: npm ci
       - run: npm test
       - run: npm run typecheck

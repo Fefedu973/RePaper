@@ -119,11 +119,11 @@ Ni les exécutables propriétaires, ni le QML extrait de Xochitl, ni les polices
 
 ## Portail de connexion Moodle
 
-Le portail est un composant séparé dans [`moodle-connect/`](../moodle-connect/README.md), avec Node 22.13+ et son verrou de dépendances npm :
+Le portail est un composant séparé dans [`moodle-connect/`](../moodle-connect/README.md), avec Node 22.13+ et npm 11.6.2 pour son verrou de dépendances :
 
 ```sh
 cd moodle-connect
-npm ci
+npx --yes npm@11.6.2 ci
 npm test
 npm run typecheck
 ```
